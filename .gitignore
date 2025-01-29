@@ -1,0 +1,18 @@
+# Root .gitignore
+.DS_Store
+.idea/
+.vscode/
+
+# Backend ignores
+todo-backend/target/
+todo-backend/.mvn/
+todo-backend/HELP.md
+todo-backend/*.log
+
+# Frontend ignores
+todo-frontend/node_modules/
+todo-frontend/dist/
+todo-frontend/.env
+todo-frontend/npm-debug.log*
+todo-frontend/yarn-debug.log*
+todo-frontend/yarn-error.log*
