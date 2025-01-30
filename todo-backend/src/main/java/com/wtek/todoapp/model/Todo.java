@@ -1,9 +1,7 @@
 package com.wtek.todoapp.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,11 +9,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
+@Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@Entity
 public class Todo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,4 +22,9 @@ public class Todo {
     private String description;
     private boolean completed;
     private LocalDate dueDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore  // Ajouter cette annotation
+    private User user;
 }

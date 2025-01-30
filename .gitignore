@@ -16,3 +16,7 @@ todo-frontend/.env
 todo-frontend/npm-debug.log*
 todo-frontend/yarn-debug.log*
 todo-frontend/yarn-error.log*
+# Fichiers temporaires
+*_[0-9]*
+*.tmp
+*.bak
