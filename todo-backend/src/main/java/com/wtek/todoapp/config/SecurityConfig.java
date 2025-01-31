@@ -1,6 +1,7 @@
 package com.wtek.todoapp.config;
 
-import com.wtek.todoapp.security.JwtAuthenticationFilter;
+import com.wtek.todoapp.security.filters.JwtAuthenticationFilter;
+import com.wtek.todoapp.security.filters.RateLimitingFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
