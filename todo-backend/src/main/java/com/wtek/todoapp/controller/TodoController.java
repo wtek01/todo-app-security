@@ -16,7 +16,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
 @RestController
 @RequestMapping("/api/todos")
 @RequiredArgsConstructor
@@ -27,6 +26,7 @@ public class TodoController {
 
     @GetMapping
     public List<TodoDTO> getAllTodos(@AuthenticationPrincipal UserDetails userDetails) {
+        // userDetails est automatiquement injecté depuis le SecurityContext
         return todoRepository.findByUserEmail(userDetails.getUsername())
                 .stream()
                 .map(TodoDTO::fromTodo)
