@@ -1,19 +1,22 @@
 // src/components/ProtectedRoute.tsx
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
+import { useEffect } from 'react';
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-    const isAuthenticated = authService.isAuthenticated();
+const ProtectedRoute = ({ children }: ProtectedRouteProps ) => {
+    const navigate = useNavigate();
 
-    if (!isAuthenticated) {
-        return <Navigate to="/login" />;
-    }
+    useEffect(() => {
+        if (!authService.isAuthenticated()) {
+            navigate('/');
+        }
+    }, [navigate]);
 
-    return <>{children}</>;
+    return authService.isAuthenticated() ? children : null;
 };
 
 export default ProtectedRoute;

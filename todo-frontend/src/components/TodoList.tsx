@@ -24,7 +24,7 @@ const TodoList = () => {
         } catch (err: unknown) {
             if (err instanceof AxiosError && err.response?.status === 401) {
                 authService.logout();
-                navigate('/login');
+                navigate('/');
             } else {
                 setError('Erreur lors du chargement des todos');
             }
@@ -33,7 +33,7 @@ const TodoList = () => {
 
     const handleLogout = () => {
         authService.logout();
-        navigate('/login');
+        navigate('/');
     };
 
     const handleAddTodo = async (newTodo: Omit<Todo, 'id'>) => {
@@ -44,7 +44,7 @@ const TodoList = () => {
         } catch (err: unknown) {
             if (err instanceof AxiosError && err.response?.status === 401) {
                 authService.logout();
-                navigate('/login');
+                navigate('/');
             } else {
                 setError('Erreur lors de l\'ajout du todo');
             }
@@ -63,7 +63,7 @@ const TodoList = () => {
         } catch (err: unknown) {
             if (err instanceof AxiosError && err.response?.status === 401) {
                 authService.logout();
-                navigate('/login');
+                navigate('/');
             } else {
                 setError('Erreur lors de la mise à jour du todo');
             }
@@ -78,7 +78,7 @@ const TodoList = () => {
         } catch (err: unknown) {
             if (err instanceof AxiosError && err.response?.status === 401) {
                 authService.logout();
-                navigate('/login');
+                navigate('/');
             } else {
                 setError('Erreur lors de la suppression du todo');
             }

@@ -1,4 +1,6 @@
+// src/App.tsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Home from './components/Home';
 import Login from './components/Login';
 import Register from './components/Register';
 import TodoList from './components/TodoList';
@@ -8,8 +10,14 @@ function App() {
     return (
         <Router>
             <Routes>
+                {/* Page d'accueil */}
+                <Route path="/" element={<Home />} />
+                
+                {/* Routes d'authentification */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                
+                {/* Route protégée */}
                 <Route 
                     path="/todos" 
                     element={
@@ -18,7 +26,9 @@ function App() {
                         </ProtectedRoute>
                     } 
                 />
-                <Route path="/" element={<Navigate to="/todos" />} />
+
+                {/* Redirection des routes inconnues vers Home */}
+                <Route path="*" element={<Navigate to="/" />} />
             </Routes>
         </Router>
     );
