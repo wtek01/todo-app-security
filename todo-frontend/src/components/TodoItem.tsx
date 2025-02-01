@@ -11,7 +11,7 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onUpdate, onDelete }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isDescriptionVisible, setIsDescriptionVisible] = useState(false);
     const [editedTodo, setEditedTodo] = useState<Todo>({ ...todo });
-    const [errors, setErrors] = useState<{[key: string]: string}>({});
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     const handleUpdate = async () => {
         if (todo.id === undefined) {
@@ -29,7 +29,7 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onUpdate, onDelete }) => {
             setIsEditing(false);
         } catch (err: any) {
             if (err.validationErrors) {
-                const newErrors = {};
+                const newErrors: Record<string, string> = {};
                 err.validationErrors.forEach((error: {field: string, message: string}) => {
                     newErrors[error.field] = error.message;
                 });
