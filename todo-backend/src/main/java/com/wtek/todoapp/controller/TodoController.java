@@ -5,6 +5,7 @@ import com.wtek.todoapp.model.Todo;
 import com.wtek.todoapp.model.User;
 import com.wtek.todoapp.repository.TodoRepository;
 import com.wtek.todoapp.repository.UserRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,30 +35,39 @@ public class TodoController {
     }
 
     @PostMapping
-    public TodoDTO createTodo(@RequestBody Todo todo, @AuthenticationPrincipal UserDetails userDetails) {
+    public TodoDTO createTodo(
+            @Valid @RequestBody TodoDTO todoDTO,  // Ajout de @Valid
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
+        // Conversion du DTO en entité
+        Todo todo = new Todo();
+        todo.setTitle(todoDTO.getTitle());
+        todo.setDescription(todoDTO.getDescription());
+        todo.setDueDate(todoDTO.getDueDate());
+        todo.setCompleted(todoDTO.isCompleted());
         todo.setUser(user);
-        Todo savedTodo = todoRepository.save(todo);
 
+        Todo savedTodo = todoRepository.save(todo);
         return TodoDTO.fromTodo(savedTodo);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<TodoDTO> updateTodo(
             @PathVariable Long id,
-            @RequestBody Todo todoDetails,
+            @Valid @RequestBody TodoDTO todoDTO,  // Ajout de @Valid
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         Todo todo = todoRepository.findById(id)
                 .filter(t -> t.getUser().getEmail().equals(userDetails.getUsername()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Todo non trouvé ou accès non autorisé"));
 
-        todo.setTitle(todoDetails.getTitle());
-        todo.setDescription(todoDetails.getDescription());
-        todo.setCompleted(todoDetails.isCompleted());
-        todo.setDueDate(todoDetails.getDueDate());
+        todo.setTitle(todoDTO.getTitle());
+        todo.setDescription(todoDTO.getDescription());
+        todo.setDueDate(todoDTO.getDueDate());
+        todo.setCompleted(todoDTO.isCompleted());
 
         Todo updatedTodo = todoRepository.save(todo);
         return ResponseEntity.ok(TodoDTO.fromTodo(updatedTodo));
