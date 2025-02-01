@@ -40,9 +40,12 @@ const TodoList = () => {
         try {
             const addedTodo = await todoService.addTodo(newTodo);
             setTodos(prevTodos => [...prevTodos, addedTodo]);
-            setError('');
-        } catch (err: unknown) {
-            if (err instanceof AxiosError && err.response?.status === 401) {
+            setError('');  // Réinitialiser l'erreur globale
+        } catch (err: any) {
+            if (err.validationErrors) {
+                // Si c'est une erreur de validation, la propager au composant AddTodo
+                throw err;
+            } else if (err instanceof AxiosError && err.response?.status === 401) {
                 authService.logout();
                 navigate('/');
             } else {
@@ -56,12 +59,15 @@ const TodoList = () => {
             const updated = await todoService.updateTodo(id, updatedTodo);
             setTodos(prevTodos =>
                 prevTodos.map(todo =>
-                    todo.id === id ? { ...todo, ...updatedTodo } : todo
+                    todo.id === id ? { ...todo, ...updated } : todo
                 )
             );
             setError('');
-        } catch (err: unknown) {
-            if (err instanceof AxiosError && err.response?.status === 401) {
+        } catch (err: any) {
+            if (err.validationErrors) {
+                // Propager les erreurs de validation au composant TodoItem
+                throw err;
+            } else if (err instanceof AxiosError && err.response?.status === 401) {
                 authService.logout();
                 navigate('/');
             } else {

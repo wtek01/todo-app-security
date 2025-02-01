@@ -1,4 +1,3 @@
-// src/services/todoService.ts
 import axios from 'axios';
 
 const API_URL = 'http://localhost:8080/api';
@@ -11,14 +10,44 @@ export interface Todo {
     dueDate?: string;
 }
 
+export interface ValidationError {
+    field: string;
+    message: string;
+}
+
+const extractValidationErrors = (error: any): ValidationError[] => {
+    if (error.response?.status === 400 && error.response.data) {
+        const validationErrors: ValidationError[] = [];
+        const errors = error.response.data;
+        
+        Object.entries(errors).forEach(([field, messages]) => {
+            if (Array.isArray(messages)) {
+                messages.forEach(message => {
+                    validationErrors.push({
+                        field,
+                        message: message as string
+                    });
+                });
+            }
+        });
+        
+        return validationErrors;
+    }
+
+    return [{
+        field: 'global',
+        message: error.response?.data?.message || 'Une erreur est survenue'
+    }];
+};
+
 export const todoService = {
     async getTodos(): Promise<Todo[]> {
         try {
             const response = await axios.get(`${API_URL}/todos`);
             return response.data;
         } catch (error) {
-            console.error('Erreur lors de la récupération des todos:', error);
-            throw new Error('Impossible de récupérer les todos');
+            const errors = extractValidationErrors(error);
+            throw { validationErrors: errors };
         }
     },
 
@@ -27,8 +56,8 @@ export const todoService = {
             const response = await axios.post(`${API_URL}/todos`, todo);
             return response.data;
         } catch (error) {
-            console.error('Erreur lors de l\'ajout du todo:', error);
-            throw new Error('Impossible d\'ajouter le todo');
+            const errors = extractValidationErrors(error);
+            throw { validationErrors: errors };
         }
     },
 
@@ -37,8 +66,8 @@ export const todoService = {
             const response = await axios.put(`${API_URL}/todos/${id}`, todo);
             return response.data;
         } catch (error) {
-            console.error('Erreur lors de la mise à jour du todo:', error);
-            throw new Error('Impossible de mettre à jour le todo');
+            const errors = extractValidationErrors(error);
+            throw { validationErrors: errors };
         }
     },
 
@@ -46,8 +75,8 @@ export const todoService = {
         try {
             await axios.delete(`${API_URL}/todos/${id}`);
         } catch (error) {
-            console.error('Erreur lors de la suppression du todo:', error);
-            throw new Error('Impossible de supprimer le todo');
+            const errors = extractValidationErrors(error);
+            throw { validationErrors: errors };
         }
     }
 };

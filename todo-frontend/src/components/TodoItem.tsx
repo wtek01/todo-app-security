@@ -3,7 +3,7 @@ import { Todo } from '../services/todoService';
 
 interface TodoItemProps {
     todo: Todo;
-    onUpdate: (id: number, updatedTodo: Todo) => void;
+    onUpdate: (id: number, updatedTodo: Partial<Todo>) => Promise<void>;
     onDelete: (id: number) => void;
 }
 
@@ -11,30 +11,45 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onUpdate, onDelete }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isDescriptionVisible, setIsDescriptionVisible] = useState(false);
     const [editedTodo, setEditedTodo] = useState<Todo>({ ...todo });
+    const [errors, setErrors] = useState<{[key: string]: string}>({});
 
-    const handleUpdate = () => {
+    const handleUpdate = async () => {
         if (todo.id === undefined) {
             console.error('Cannot update todo without an id');
             return;
         }
-        if (!editedTodo.title.trim()) {
-            return;
+        
+        setErrors({}); // Réinitialiser les erreurs
+        try {
+            await onUpdate(todo.id, {
+                ...editedTodo,
+                title: editedTodo.title.trim(),
+                description: editedTodo.description?.trim()
+            });
+            setIsEditing(false);
+        } catch (err: any) {
+            if (err.validationErrors) {
+                const newErrors = {};
+                err.validationErrors.forEach((error: {field: string, message: string}) => {
+                    newErrors[error.field] = error.message;
+                });
+                setErrors(newErrors);
+            }
         }
-        onUpdate(todo.id, {
-            ...editedTodo,
-            title: editedTodo.title.trim(),
-            description: editedTodo.description?.trim()
-        });
-        setIsEditing(false);
     };
 
-    const toggleComplete = () => {
+    const toggleComplete = async () => {
         if (todo.id === undefined) return;
-        onUpdate(todo.id, { ...todo, completed: !todo.completed });
+        try {
+            await onUpdate(todo.id, { ...todo, completed: !todo.completed });
+        } catch (err) {
+            console.error('Erreur lors de la mise à jour du statut:', err);
+        }
     };
 
     const handleCancel = () => {
         setEditedTodo({ ...todo });
+        setErrors({});
         setIsEditing(false);
     };
 
@@ -44,19 +59,41 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onUpdate, onDelete }) => {
         return (
             <div className="todo-item">
                 <div className="todo-edit-form">
-                    <input
-                        type="text"
-                        value={editedTodo.title}
-                        onChange={(e) => setEditedTodo({ ...editedTodo, title: e.target.value })}
-                        placeholder="Titre de la tâche"
-                        autoFocus
-                    />
-                    <textarea
-                        value={editedTodo.description || ''}
-                        onChange={(e) => setEditedTodo({ ...editedTodo, description: e.target.value })}
-                        placeholder="Description (optionnelle)"
-                        rows={3}
-                    />
+                    <div className="form-group">
+                        <input
+                            type="text"
+                            value={editedTodo.title}
+                            onChange={(e) => setEditedTodo({ ...editedTodo, title: e.target.value })}
+                            placeholder="Titre de la tâche"
+                            className={`form-input ${errors.title ? 'error' : ''}`}
+                            autoFocus
+                        />
+                        {errors.title && <div className="error-message">{errors.title}</div>}
+                    </div>
+
+                    <div className="form-group">
+                        <textarea
+                            value={editedTodo.description || ''}
+                            onChange={(e) => setEditedTodo({ ...editedTodo, description: e.target.value })}
+                            placeholder="Description (optionnelle)"
+                            className={`form-input ${errors.description ? 'error' : ''}`}
+                            rows={3}
+                        />
+                        {errors.description && <div className="error-message">{errors.description}</div>}
+                    </div>
+
+                    {editedTodo.dueDate && (
+                        <div className="form-group">
+                            <input
+                                type="date"
+                                value={editedTodo.dueDate}
+                                onChange={(e) => setEditedTodo({ ...editedTodo, dueDate: e.target.value })}
+                                className={`form-input ${errors.dueDate ? 'error' : ''}`}
+                            />
+                            {errors.dueDate && <div className="error-message">{errors.dueDate}</div>}
+                        </div>
+                    )}
+
                     <div className="todo-actions">
                         <button onClick={handleUpdate} className="icon-button edit" title="Sauvegarder">
                             <i className="fas fa-save"></i>
@@ -96,6 +133,11 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onUpdate, onDelete }) => {
                                 </div>
                             )}
                         </>
+                    )}
+                    {todo.dueDate && (
+                        <div className="todo-due-date">
+                            Échéance : {new Date(todo.dueDate).toLocaleDateString()}
+                        </div>
                     )}
                 </div>
             </div>
