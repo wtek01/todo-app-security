@@ -1,4 +1,3 @@
-// src/services/authService.ts
 import axios from './axiosConfig';
 
 const API_URL = 'http://localhost:8080/api';

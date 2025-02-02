@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Todo } from '../services/todoService';
+import { Todo, ValidationError } from '../services/todoService';
 
 interface TodoItemProps {
     todo: Todo;
@@ -12,149 +12,182 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onUpdate, onDelete }) => {
     const [isDescriptionVisible, setIsDescriptionVisible] = useState(false);
     const [editedTodo, setEditedTodo] = useState<Todo>({ ...todo });
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [isUpdating, setIsUpdating] = useState(false);
 
-    const handleUpdate = async () => {
-        if (todo.id === undefined) {
-            console.error('Cannot update todo without an id');
-            return;
-        }
-        
-        setErrors({}); // Réinitialiser les erreurs
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (todo.id === undefined) return;
+
+        setErrors({});
         try {
             await onUpdate(todo.id, {
-                ...editedTodo,
                 title: editedTodo.title.trim(),
-                description: editedTodo.description?.trim()
+                description: editedTodo.description?.trim(),
+                dueDate: editedTodo.dueDate
             });
             setIsEditing(false);
         } catch (err: any) {
             if (err.validationErrors) {
                 const newErrors: Record<string, string> = {};
-                err.validationErrors.forEach((error: {field: string, message: string}) => {
+                err.validationErrors.forEach((error: ValidationError) => {
                     newErrors[error.field] = error.message;
                 });
                 setErrors(newErrors);
             }
+        } finally {
+            setIsUpdating(false);
         }
     };
 
-    const toggleComplete = async () => {
-        if (todo.id === undefined) return;
+    const handleToggleComplete = async (e: React.MouseEvent | React.KeyboardEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (todo.id === undefined || isUpdating) return;
+        
+        setIsUpdating(true);
         try {
-            await onUpdate(todo.id, { ...todo, completed: !todo.completed });
+            await onUpdate(todo.id, {
+                completed: !todo.completed
+            });
         } catch (err) {
             console.error('Erreur lors de la mise à jour du statut:', err);
+        } finally {
+            setIsUpdating(false);
         }
     };
 
-    const handleCancel = () => {
+    const handleCancel = (e: React.MouseEvent) => {
+        e.preventDefault();
         setEditedTodo({ ...todo });
-        setErrors({});
         setIsEditing(false);
+        setErrors({});
     };
 
-    const hasDescription = todo.description && todo.description.trim().length > 0;
+    const handleDelete = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (todo.id !== undefined) {
+            onDelete(todo.id);
+        }
+    };
 
     if (isEditing) {
         return (
             <div className="todo-item">
-                <div className="todo-edit-form">
-                    <div className="form-group">
-                        <input
-                            type="text"
-                            value={editedTodo.title}
-                            onChange={(e) => setEditedTodo({ ...editedTodo, title: e.target.value })}
-                            placeholder="Titre de la tâche"
-                            className={`form-input ${errors.title ? 'error' : ''}`}
-                            autoFocus
-                        />
-                        {errors.title && <div className="error-message">{errors.title}</div>}
-                    </div>
-
-                    <div className="form-group">
-                        <textarea
-                            value={editedTodo.description || ''}
-                            onChange={(e) => setEditedTodo({ ...editedTodo, description: e.target.value })}
-                            placeholder="Description (optionnelle)"
-                            className={`form-input ${errors.description ? 'error' : ''}`}
-                            rows={3}
-                        />
-                        {errors.description && <div className="error-message">{errors.description}</div>}
-                    </div>
-
-                    {editedTodo.dueDate && (
-                        <div className="form-group">
-                            <input
-                                type="date"
-                                value={editedTodo.dueDate}
-                                onChange={(e) => setEditedTodo({ ...editedTodo, dueDate: e.target.value })}
-                                className={`form-input ${errors.dueDate ? 'error' : ''}`}
-                            />
-                            {errors.dueDate && <div className="error-message">{errors.dueDate}</div>}
-                        </div>
-                    )}
-
+                <form className="todo-edit-form" onSubmit={handleUpdate}>
+                    <input
+                        type="text"
+                        value={editedTodo.title}
+                        onChange={(e) => setEditedTodo({ ...editedTodo, title: e.target.value })}
+                        className={errors.title ? 'error' : ''}
+                        placeholder="Titre de la tâche"
+                    />
+                    {errors.title && <div className="form-error">{errors.title}</div>}
+                    
+                    <textarea
+                        value={editedTodo.description || ''}
+                        onChange={(e) => setEditedTodo({ ...editedTodo, description: e.target.value })}
+                        rows={3}
+                        className={errors.description ? 'error' : ''}
+                        placeholder="Description (optionnelle)"
+                    />
+                    {errors.description && <div className="form-error">{errors.description}</div>}
+                    
+                    <input
+                        type="date"
+                        value={editedTodo.dueDate || ''}
+                        onChange={(e) => setEditedTodo({ ...editedTodo, dueDate: e.target.value })}
+                        className={errors.dueDate ? 'error' : ''}
+                    />
+                    {errors.dueDate && <div className="form-error">{errors.dueDate}</div>}
+                    
                     <div className="todo-actions">
-                        <button onClick={handleUpdate} className="icon-button edit" title="Sauvegarder">
-                            <i className="fas fa-save"></i>
+                        <button type="submit" className="todo-button" disabled={isUpdating}>
+                            Sauvegarder
                         </button>
-                        <button onClick={handleCancel} className="icon-button" title="Annuler">
-                            <i className="fas fa-times"></i>
+                        <button 
+                            type="button" 
+                            className="todo-button" 
+                            onClick={handleCancel}
+                            disabled={isUpdating}
+                        >
+                            Annuler
                         </button>
                     </div>
-                </div>
+                </form>
             </div>
         );
     }
 
     return (
         <div className={`todo-item ${todo.completed ? 'completed' : ''}`}>
+            <div
+                className={`todo-checkbox ${todo.completed ? 'completed' : ''}`}
+                onClick={handleToggleComplete}
+                role="checkbox"
+                aria-checked={todo.completed}
+                tabIndex={0}
+                onKeyPress={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        handleToggleComplete(e);
+                    }
+                }}
+            />
+            
             <div className="todo-content">
-                <input
-                    type="checkbox"
-                    checked={todo.completed}
-                    onChange={toggleComplete}
-                    className="todo-checkbox"
-                />
-                <div className="todo-text">
-                    <div className="todo-title">{todo.title}</div>
-                    {hasDescription && (
-                        <>
-                            <button 
-                                onClick={() => setIsDescriptionVisible(!isDescriptionVisible)}
-                                className="description-toggle"
-                                title={isDescriptionVisible ? "Masquer la description" : "Afficher la description"}
-                            >
-                                <i className={`fas fa-chevron-${isDescriptionVisible ? 'up' : 'down'}`}></i>
-                            </button>
-                            {isDescriptionVisible && (
-                                <div className="todo-description">
-                                    {todo.description}
-                                </div>
-                            )}
-                        </>
-                    )}
-                    {todo.dueDate && (
-                        <div className="todo-due-date">
-                            Échéance : {new Date(todo.dueDate).toLocaleDateString()}
-                        </div>
-                    )}
+                <div className={`todo-title ${todo.completed ? 'completed' : ''}`}>
+                    {todo.title}
                 </div>
+                
+                {todo.description && (
+                    <>
+                        <button
+                            className="todo-button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setIsDescriptionVisible(!isDescriptionVisible);
+                            }}
+                        >
+                            {isDescriptionVisible ? 'Masquer' : 'Voir plus'}
+                        </button>
+                        
+                        {isDescriptionVisible && (
+                            <div className="todo-description">
+                                {todo.description}
+                            </div>
+                        )}
+                    </>
+                )}
+                
+                {todo.dueDate && (
+                    <div className="todo-date">
+                        Échéance : {new Date(todo.dueDate).toLocaleDateString()}
+                    </div>
+                )}
             </div>
+            
             <div className="todo-actions">
-                <button onClick={() => setIsEditing(true)} className="icon-button edit" title="Modifier">
-                    <i className="fas fa-edit"></i>
+                <button 
+                    className="todo-button" 
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsEditing(true);
+                    }} 
+                    title="Modifier"
+                    disabled={isUpdating}
+                >
+                    ✏️
                 </button>
                 <button 
-                    onClick={() => {
-                        if (todo.id !== undefined) {
-                            onDelete(todo.id);
-                        }
-                    }}
-                    className="icon-button delete"
+                    className="todo-button delete" 
+                    onClick={handleDelete}
                     title="Supprimer"
+                    disabled={isUpdating}
                 >
-                    <i className="fas fa-trash"></i>
+                    🗑️
                 </button>
             </div>
         </div>

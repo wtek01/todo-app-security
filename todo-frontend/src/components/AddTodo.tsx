@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Todo } from '../services/todoService';
-import '../styles/todo.css';
+import { Todo, ValidationError } from '../services/todoService';
 
 interface AddTodoProps {
     onAdd: (todo: Omit<Todo, 'id'>) => Promise<void>;
@@ -11,30 +10,35 @@ const AddTodo: React.FC<AddTodoProps> = ({ onAdd }) => {
     const [description, setDescription] = useState('');
     const [dueDate, setDueDate] = useState('');
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setErrors({}); // Réinitialiser les erreurs
+        setIsSubmitting(true);
+        setErrors({});
 
         try {
             await onAdd({
                 title: title.trim(),
                 description: description.trim() || undefined,
-                completed: false,
-                dueDate: dueDate || undefined
+                dueDate: dueDate || undefined,
+                completed: false
             });
-            // Réinitialiser le formulaire après succès
+
+            // Réinitialiser le formulaire après l'ajout réussi
             setTitle('');
             setDescription('');
             setDueDate('');
         } catch (err: any) {
             if (err.validationErrors) {
                 const newErrors: Record<string, string> = {};
-                err.validationErrors.forEach((error: {field: string, message: string}) => {
+                err.validationErrors.forEach((error: ValidationError) => {
                     newErrors[error.field] = error.message;
                 });
                 setErrors(newErrors);
             }
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -46,9 +50,10 @@ const AddTodo: React.FC<AddTodoProps> = ({ onAdd }) => {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Titre de la tâche"
-                    className={`form-input ${errors.title ? 'error' : ''}`}
+                    className={errors.title ? 'error' : ''}
+                    disabled={isSubmitting}
                 />
-                {errors.title && <div className="error-message">{errors.title}</div>}
+                {errors.title && <div className="form-error">{errors.title}</div>}
             </div>
 
             <div className="form-group">
@@ -56,9 +61,11 @@ const AddTodo: React.FC<AddTodoProps> = ({ onAdd }) => {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Description (optionnelle)"
-                    className={`form-input ${errors.description ? 'error' : ''}`}
+                    rows={3}
+                    className={errors.description ? 'error' : ''}
+                    disabled={isSubmitting}
                 />
-                {errors.description && <div className="error-message">{errors.description}</div>}
+                {errors.description && <div className="form-error">{errors.description}</div>}
             </div>
 
             <div className="form-group">
@@ -66,13 +73,23 @@ const AddTodo: React.FC<AddTodoProps> = ({ onAdd }) => {
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className={`form-input ${errors.dueDate ? 'error' : ''}`}
+                    min={new Date().toISOString().split('T')[0]}
+                    className={errors.dueDate ? 'error' : ''}
+                    disabled={isSubmitting}
                 />
-                {errors.dueDate && <div className="error-message">{errors.dueDate}</div>}
+                {errors.dueDate && <div className="form-error">{errors.dueDate}</div>}
             </div>
 
-            <button type="submit" className="submit-button">
-                Ajouter la tâche
+            {errors.submit && (
+                <div className="error-message">{errors.submit}</div>
+            )}
+
+            <button 
+                type="submit" 
+                className="add-todo-button"
+                disabled={isSubmitting}
+            >
+                {isSubmitting ? 'Ajout en cours...' : 'Ajouter la tâche'}
             </button>
         </form>
     );

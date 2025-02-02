@@ -2,6 +2,20 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:8080/api';
 
+// Ajouter l'intercepteur pour le token d'authentification
+axios.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
 export interface Todo {
     id?: number;
     title: string;
@@ -61,9 +75,21 @@ export const todoService = {
         }
     },
 
-    async updateTodo(id: number, todo: Partial<Todo>): Promise<Todo> {
+    async updateTodo(id: number, updates: Partial<Todo>): Promise<Todo> {
         try {
-            const response = await axios.put(`${API_URL}/todos/${id}`, todo);
+            // Si on met à jour le statut completed, on doit envoyer aussi le titre
+            if ('completed' in updates) {
+                const todos = await this.getTodos();
+                const currentTodo = todos.find(t => t.id === id);
+                if (currentTodo) {
+                    updates = {
+                        ...updates,
+                        title: currentTodo.title
+                    };
+                }
+            }
+            
+            const response = await axios.put(`${API_URL}/todos/${id}`, updates);
             return response.data;
         } catch (error) {
             const errors = extractValidationErrors(error);

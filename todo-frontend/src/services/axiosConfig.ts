@@ -1,10 +1,14 @@
 import axios from 'axios';
 
-// Add a request interceptor to include the auth token in requests
+/* Add a request interceptor to include the auth token in requests
+S'exécute avant chaque requête HTTP
+Récupère le token JWT du localStorage
+Ajoute automatiquement le token dans le header Authorization
+Évite d'avoir à ajouter manuellement le token dans chaque requête
+*/
 axios.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
-        console.log("🚀 ~ file: axiosConfig.ts:7 ~ token:", token)
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { todoService, Todo } from '../services/todoService';
 import { authService } from '../services/authService';
+import { userService, UserInfo } from '../services/userService';
 import AddTodo from './AddTodo';
 import TodoItem from './TodoItem';
 import { AxiosError } from 'axios';
@@ -10,25 +11,37 @@ import '../styles/todo.css';
 const TodoList = () => {
     const [todos, setTodos] = useState<Todo[]>([]);
     const [error, setError] = useState<string>('');
+    const [userInfo, setUserInfo] = useState<UserInfo | null>(userService.getStoredUserInfo());
     const navigate = useNavigate();
 
     useEffect(() => {
-        loadTodos();
+        loadInitialData();
     }, []);
 
-    const loadTodos = async () => {
+    const loadInitialData = async () => {
         try {
-            const fetchedTodos = await todoService.getTodos();
+            // Charger les todos et les informations utilisateur en parallèle
+            const [fetchedTodos, updatedUserInfo] = await Promise.all([
+                todoService.getTodos(),
+                userService.getCurrentUser()
+            ]);
+            
             setTodos(fetchedTodos);
+            setUserInfo(updatedUserInfo);
             setError('');
         } catch (err: unknown) {
             if (err instanceof AxiosError && err.response?.status === 401) {
-                authService.logout();
-                navigate('/');
+                handleUnauthorized();
             } else {
-                setError('Erreur lors du chargement des todos');
+                setError('Erreur lors du chargement des données');
+                console.error('Error loading data:', err);
             }
         }
+    };
+
+    const handleUnauthorized = () => {
+        authService.logout();
+        navigate('/');
     };
 
     const handleLogout = () => {
@@ -40,14 +53,12 @@ const TodoList = () => {
         try {
             const addedTodo = await todoService.addTodo(newTodo);
             setTodos(prevTodos => [...prevTodos, addedTodo]);
-            setError('');  // Réinitialiser l'erreur globale
+            setError('');
         } catch (err: any) {
             if (err.validationErrors) {
-                // Si c'est une erreur de validation, la propager au composant AddTodo
                 throw err;
             } else if (err instanceof AxiosError && err.response?.status === 401) {
-                authService.logout();
-                navigate('/');
+                handleUnauthorized();
             } else {
                 setError('Erreur lors de l\'ajout du todo');
             }
@@ -59,17 +70,15 @@ const TodoList = () => {
             const updated = await todoService.updateTodo(id, updatedTodo);
             setTodos(prevTodos =>
                 prevTodos.map(todo =>
-                    todo.id === id ? { ...todo, ...updated } : todo
+                    todo.id === id ? updated : todo
                 )
             );
             setError('');
         } catch (err: any) {
             if (err.validationErrors) {
-                // Propager les erreurs de validation au composant TodoItem
                 throw err;
             } else if (err instanceof AxiosError && err.response?.status === 401) {
-                authService.logout();
-                navigate('/');
+                handleUnauthorized();
             } else {
                 setError('Erreur lors de la mise à jour du todo');
             }
@@ -83,44 +92,65 @@ const TodoList = () => {
             setError('');
         } catch (err: unknown) {
             if (err instanceof AxiosError && err.response?.status === 401) {
-                authService.logout();
-                navigate('/');
+                handleUnauthorized();
             } else {
                 setError('Erreur lors de la suppression du todo');
             }
         }
     };
 
+    const getUserDisplayName = () => {
+        if (!userInfo) return 'Chargement...';
+        if (userInfo.firstName && userInfo.lastName) {
+            return `${userInfo.firstName} ${userInfo.lastName}`;
+        }
+        if (userInfo.firstName) return userInfo.firstName;
+        return userInfo.username;
+    };
+
     return (
-        <div className="todo-container">
-            <div className="todo-header">
+        <div className="app-container">
+            <nav className="navbar">
                 <h1>Ma Liste de Tâches</h1>
-                <button onClick={handleLogout} className="logout-button">
-                    Déconnexion
-                </button>
-            </div>
-            
-            {error && <div className="error-message">{error}</div>}
-            
-            <AddTodo onAdd={handleAddTodo} />
-            
-            <div className="todo-list">
-                {todos.length === 0 ? (
-                    <div className="no-todos">
-                        Aucune tâche pour le moment. Ajoutez-en une !
+                <div className="navbar-user">
+                    <div className="user-avatar">
+                        {getUserDisplayName().charAt(0).toUpperCase()}
                     </div>
-                ) : (
-                    todos
-                        .filter((todo): todo is Todo & { id: number } => todo.id !== undefined)
-                        .map(todo => (
-                            <TodoItem
-                                key={todo.id}
-                                todo={todo}
-                                onUpdate={handleUpdateTodo}
-                                onDelete={handleDeleteTodo}
-                            />
-                        ))
-                )}
+                    <span className="user-name">{getUserDisplayName()}</span>
+                    <button onClick={handleLogout} className="logout-button">
+                        Déconnexion
+                    </button>
+                </div>
+            </nav>
+
+            <div className="todo-container">
+                <div className="todo-list-container">
+                    <h2>Mes Tâches</h2>
+                    {error && <div className="error-message">{error}</div>}
+                    <div className="todo-list">
+                        {todos.length === 0 ? (
+                            <div className="no-todos">
+                                Aucune tâche pour le moment. Ajoutez-en une !
+                            </div>
+                        ) : (
+                            todos
+                                .filter((todo): todo is Todo & { id: number } => todo.id !== undefined)
+                                .map(todo => (
+                                    <TodoItem
+                                        key={todo.id}
+                                        todo={todo}
+                                        onUpdate={handleUpdateTodo}
+                                        onDelete={handleDeleteTodo}
+                                    />
+                                ))
+                        )}
+                    </div>
+                </div>
+                
+                <div className="add-todo-container">
+                    <h2>Ajouter une tâche</h2>
+                    <AddTodo onAdd={handleAddTodo} />
+                </div>
             </div>
         </div>
     );
