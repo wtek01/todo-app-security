@@ -77,14 +77,14 @@ export const todoService = {
 
     async updateTodo(id: number, updates: Partial<Todo>): Promise<Todo> {
         try {
-            // Si on met à jour le statut completed, on doit envoyer aussi le titre
+            // Si on met à jour le statut completed, on doit envoyer toutes les propriétés existantes
             if ('completed' in updates) {
                 const todos = await this.getTodos();
                 const currentTodo = todos.find(t => t.id === id);
                 if (currentTodo) {
                     updates = {
-                        ...updates,
-                        title: currentTodo.title
+                        ...currentTodo,
+                        ...updates
                     };
                 }
             }

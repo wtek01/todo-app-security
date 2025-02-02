@@ -359,6 +359,37 @@ button[type="submit"]:hover {
     background: #a0aec0;
 }
 
+/* Sections de todos complétés et non complétés */
+.completed-section {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e0e0e0;
+    color: #666;
+}
+
+.completed-list {
+    opacity: 0.8;
+}
+
+.completed-list .todo-item {
+    background-color: #f8f8f8;
+}
+
+.todo-list h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.todo-list h2::after {
+    content: attr(data-count);
+    font-size: 0.8em;
+    color: #666;
+    background-color: #f0f0f0;
+    padding: 0.2em 0.6em;
+    border-radius: 1em;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
     .todo-container {

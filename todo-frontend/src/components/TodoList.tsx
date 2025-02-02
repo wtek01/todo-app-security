@@ -20,7 +20,6 @@ const TodoList = () => {
 
     const loadInitialData = async () => {
         try {
-            // Charger les todos et les informations utilisateur en parallèle
             const [fetchedTodos, updatedUserInfo] = await Promise.all([
                 todoService.getTodos(),
                 userService.getCurrentUser()
@@ -108,6 +107,29 @@ const TodoList = () => {
         return userInfo.username;
     };
 
+    // Séparer les todos en deux catégories
+    const incompleteTodos = todos
+        .filter(todo => !todo.completed && todo.id !== undefined)
+        .sort((a, b) => {
+            if (a.dueDate && b.dueDate) {
+                return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+            }
+            if (a.dueDate) return -1;
+            if (b.dueDate) return 1;
+            return 0;
+        });
+
+    const completedTodos = todos
+        .filter(todo => todo.completed && todo.id !== undefined)
+        .sort((a, b) => {
+            if (a.dueDate && b.dueDate) {
+                return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
+            }
+            if (a.dueDate) return 1;
+            if (b.dueDate) return -1;
+            return 0;
+        });
+
     return (
         <div className="app-container">
             <nav className="navbar">
@@ -125,26 +147,40 @@ const TodoList = () => {
 
             <div className="todo-container">
                 <div className="todo-list-container">
-                    <h2>Mes Tâches</h2>
+                    <h2>Tâches à faire ({incompleteTodos.length})</h2>
                     {error && <div className="error-message">{error}</div>}
                     <div className="todo-list">
-                        {todos.length === 0 ? (
+                        {incompleteTodos.length === 0 ? (
                             <div className="no-todos">
-                                Aucune tâche pour le moment. Ajoutez-en une !
+                                Aucune tâche en cours. Bravo !
                             </div>
                         ) : (
-                            todos
-                                .filter((todo): todo is Todo & { id: number } => todo.id !== undefined)
-                                .map(todo => (
+                            incompleteTodos.map(todo => (
+                                <TodoItem
+                                    key={todo.id}
+                                    todo={todo}
+                                    onUpdate={handleUpdateTodo}
+                                    onDelete={handleDeleteTodo}
+                                />
+                            ))
+                        )}
+                    </div>
+
+                    {completedTodos.length > 0 && (
+                        <>
+                            <h2 className="completed-section">Tâches terminées ({completedTodos.length})</h2>
+                            <div className="todo-list completed-list">
+                                {completedTodos.map(todo => (
                                     <TodoItem
                                         key={todo.id}
                                         todo={todo}
                                         onUpdate={handleUpdateTodo}
                                         onDelete={handleDeleteTodo}
                                     />
-                                ))
-                        )}
-                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </div>
                 
                 <div className="add-todo-container">

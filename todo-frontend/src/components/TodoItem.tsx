@@ -48,6 +48,7 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onUpdate, onDelete }) => {
         setIsUpdating(true);
         try {
             await onUpdate(todo.id, {
+                ...todo,
                 completed: !todo.completed
             });
         } catch (err) {
