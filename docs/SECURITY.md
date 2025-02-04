@@ -1,7 +1,7 @@
 1. Authenitication : JWT Token , Spring Seucurity
 2. Contrôler l'accès aux endpoints 
 3. Limitation du nombre de requêtes par IP 
-4. Validation stricte des entrées : Protéger contre les injections (Todo)
+4. Validation stricte des entrées : Protéger contre les injections 
 5. Gestion centralisée des erreurs: Gérer proprement les erreurs (Todo)
 6. Traçage des actions de sécurité : Tracer les activités suspectes(Todo)
 7. Protection CORS : Sécuriser les communications cross-origin (Todo)
