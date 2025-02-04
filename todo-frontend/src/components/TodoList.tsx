@@ -5,13 +5,17 @@ import { authService } from '../services/authService';
 import { userService, UserInfo } from '../services/userService';
 import AddTodo from './AddTodo';
 import TodoItem from './TodoItem';
+import UserMenu from './UserMenu'; // Import UserMenu component
 import { AxiosError } from 'axios';
 import '../styles/todo.css';
 
 const TodoList = () => {
     const [todos, setTodos] = useState<Todo[]>([]);
     const [error, setError] = useState<string>('');
-    const [userInfo, setUserInfo] = useState<UserInfo | null>(userService.getStoredUserInfo());
+    const [userInfo, setUserInfo] = useState<UserInfo | null>(() => {
+        const storedUser = localStorage.getItem('user');
+        return storedUser ? JSON.parse(storedUser) : null;
+    });
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -99,12 +103,11 @@ const TodoList = () => {
     };
 
     const getUserDisplayName = () => {
-        if (!userInfo) return 'Chargement...';
-        if (userInfo.firstName && userInfo.lastName) {
-            return `${userInfo.firstName} ${userInfo.lastName}`;
+        if (!userInfo) return '';
+        if (userInfo.firstname && userInfo.lastname) {
+            return `${userInfo.firstname} ${userInfo.lastname}`;
         }
-        if (userInfo.firstName) return userInfo.firstName;
-        return userInfo.username;
+        return userInfo.email.split('@')[0];
     };
 
     // Séparer les todos en deux catégories
@@ -134,15 +137,7 @@ const TodoList = () => {
         <div className="app-container">
             <nav className="navbar">
                 <h1>Ma Liste de Tâches</h1>
-                <div className="navbar-user">
-                    <div className="user-avatar">
-                        {getUserDisplayName().charAt(0).toUpperCase()}
-                    </div>
-                    <span className="user-name">{getUserDisplayName()}</span>
-                    <button onClick={handleLogout} className="logout-button">
-                        Déconnexion
-                    </button>
-                </div>
+                {userInfo && <UserMenu userInfo={userInfo} onLogout={handleLogout} />}
             </nav>
 
             <div className="todo-container">

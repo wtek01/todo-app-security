@@ -18,7 +18,7 @@ public class UserDTO {
 
     public static UserDTO fromUser(User user) {
         return UserDTO.builder()
-            .username(user.getEmail()) // ou un autre champ si vous avez un username spécifique
+            .username(user.getUsername()) // ou un autre champ si vous avez un username spécifique
             .email(user.getEmail())
             .firstName(user.getFirstname())
             .lastName(user.getLastname())

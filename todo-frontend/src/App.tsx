@@ -4,6 +4,8 @@ import Home from './components/Home';
 import Login from './components/Login';
 import Register from './components/Register';
 import TodoList from './components/TodoList';
+import Profile from './components/Profile';
+import EditProfile from './components/EditProfile';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -17,12 +19,28 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 
-                {/* Route protégée */}
+                {/* Routes protégées */}
                 <Route 
                     path="/todos" 
                     element={
                         <ProtectedRoute>
                             <TodoList />
+                        </ProtectedRoute>
+                    } 
+                />
+                <Route 
+                    path="/profile" 
+                    element={
+                        <ProtectedRoute>
+                            <Profile />
+                        </ProtectedRoute>
+                    } 
+                />
+                <Route 
+                    path="/profile/edit" 
+                    element={
+                        <ProtectedRoute>
+                            <EditProfile />
                         </ProtectedRoute>
                     } 
                 />
