@@ -10,7 +10,7 @@ Configurer CORS de manière sécurisée
 
 3. Validation stricte des entrées : Protéger contre les injections
 4. Gestion centralisée des erreurs: Gérer proprement les erreurs 
-5. Traçage des actions de sécurité : Tracer les activités suspectes(Todo)
+5. Traçage des actions de sécurité : Tracer les activités suspectes
 6. Protection CORS : Sécuriser les communications cross-origin (Todo)
 7. Protection contre les attaques courantes   (Todo)
 8. Contrôler l'accès aux endpoints  (Todo)
